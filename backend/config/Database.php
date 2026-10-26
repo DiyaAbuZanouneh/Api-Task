@@ -1,0 +1,26 @@
+<?php
+
+class Database
+{
+    private $host = "localhost";
+    private $db_name = "user_system";
+    private $username = "root";
+    private $password = "";
+    private $conn = null;
+
+    public function connect()
+    {
+        if ($this->conn === null) {
+            $this->conn = new PDO(
+                "mysql:host=" . $this->host . ";dbname=" . $this->db_name . ";charset=utf8mb4",
+                $this->username,
+                $this->password,
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+                ]
+            );
+        }
+        return $this->conn;
+    }
+}
