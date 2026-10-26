@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Update User</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <form id="form">
+      <h2>Update User</h2>
+      <p class="error" id="error" hidden></p>
+
+      <label for="name">Name</label>
+      <input type="text" id="name" required />
+
+      <label for="email">Email</label>
+      <input type="email" id="email" required />
+
+      <label for="password">New Password (leave empty to keep current)</label>
+      <input type="password" id="password" minlength="8" />
+
+      <button type="submit">Save Changes</button>
+      <a href="dashboard.html">Cancel</a>
+    </form>
+
+    <script src="js/api.js"></script>
+    <script>
+      const id = new URLSearchParams(location.search).get("id");
+
+      (async () => {
+        if (!(await requireLogin())) return;
+        if (!id) return showError("User ID is required.");
+
+        const { ok, data } = await api(
+          `users.php?id=${encodeURIComponent(id)}`,
+        );
+        if (!ok) return showError(data.message);
+        document.getElementById("name").value = data.user.name;
+        document.getElementById("email").value = data.user.email;
+      })();
+
+      document.getElementById("form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const { ok, data } = await api("update.php", {
+          method: "PUT",
+          body: {
+            id: Number(id),
+            name: document.getElementById("name").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            password: document.getElementById("password").value,
+          },
+        });
+        if (ok) {
+          window.location.href = "dashboard.html";
+        } else {
+          showError(data.message);
+        }
+      });
+    </script>
+  </body>
+</html>

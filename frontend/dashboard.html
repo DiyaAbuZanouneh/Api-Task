@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="topbar">
+      <h1 id="welcome">Dashboard</h1>
+      <button id="logout" type="button">Logout</button>
+    </div>
+
+    <p class="error" id="error" hidden></p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Update</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <script src="js/api.js"></script>
+    <script>
+      let currentUser = null;
+
+      function cell(text) {
+        const td = document.createElement("td");
+        td.textContent = text; // textContent avoids XSS
+        return td;
+      }
+
+      function render(users) {
+        const rows = document.getElementById("rows");
+        rows.replaceChildren();
+        for (const u of users) {
+          const tr = document.createElement("tr");
+          tr.append(cell(u.name), cell(u.email));
+
+          const upd = document.createElement("td");
+          const link = document.createElement("a");
+          link.className = "btn";
+          link.href = `update.html?id=${encodeURIComponent(u.id)}`;
+          link.textContent = "Update";
+          upd.append(link);
+
+          const del = document.createElement("td");
+          const btn = document.createElement("button");
+          btn.className = "danger";
+          btn.textContent = "Delete";
+          btn.disabled = u.id == currentUser.id; // cannot delete yourself
+          btn.addEventListener("click", () => remove(u));
+          del.append(btn);
+
+          tr.append(upd, del);
+          rows.append(tr);
+        }
+      }
+
+      async function load() {
+        const { ok, data } = await api("users.php");
+        if (!ok) return showError(data.message);
+        render(data.users);
+      }
+
+      async function remove(u) {
+        if (!confirm(`Delete ${u.name}?`)) return;
+        const { ok, data } = await api(`delete.php?id=${u.id}`, {
+          method: "DELETE",
+        });
+        if (!ok) return showError(data.message);
+        load();
+      }
+
+      document.getElementById("logout").addEventListener("click", async () => {
+        await api("logout.php", { method: "POST" });
+        window.location.href = "login.html";
+      });
+
+      (async () => {
+        currentUser = await requireLogin();
+        if (!currentUser) return;
+        document.getElementById("welcome").textContent =
+          `Welcome, ${currentUser.name}`;
+        load();
+      })();
+    </script>
+  </body>
+</html>
